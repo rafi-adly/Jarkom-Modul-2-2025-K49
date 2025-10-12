@@ -20,17 +20,19 @@ zone "jarkomK49.com" {
 };
 EOF
 
+
 cat > /etc/bind/K49/jarkomK49.com<<'EOF'
 $TTL 604800
 @       IN SOA ns1.jarkomK49.com root.jarkomK49.com (
-            2025101301 ; Serial YYYYMMDDXX
+            2025101302 ; Serial YYYYMMDDXX
             604800     ; Refresh 1 minggu
             86400      ; Retry 1 hari
             2419200    ; Expire 4 minggu
             604800 )   ; Negative Cache TTL
 
-@       IN NS ns1.jarkomK49.com
-@       IN NS ns2.jarkomK49.com
+@       IN NS ns1.jarkomK49.com.
+@       IN NS ns2.jarkomK49.com.
+@       IN A 10.88.3.2       ; Apex domain mengarah ke Sirion (front door)
 
 ; Records A
 ns1     IN A 10.88.3.3
@@ -45,9 +47,9 @@ Lindon   IN A 10.88.3.5
 Vingilot IN A 10.88.3.6
 
 ; Alias / CNAME
-www      IN CNAME Sirion.jarkomK49.com
-static   IN CNAME Lindon.jarkomK49.com
-app      IN CNAME Vingilot.jarkomK49.com
+www      IN CNAME Sirion.jarkomK49.com.
+static   IN CNAME Lindon.jarkomK49.com.
+app      IN CNAME Vingilot.jarkomK49.com.
 EOF
 
 cat > /etc/bind/named.conf.options <<'EOF'
