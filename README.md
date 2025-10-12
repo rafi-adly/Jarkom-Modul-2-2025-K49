@@ -139,5 +139,16 @@ Pertama, tambahkan resolver `up echo nameserver 192.168.122.1 > /etc/resolv.conf
 
 <img width="957" height="187" alt="image" src="https://github.com/user-attachments/assets/a3cbcc01-a7e3-4198-a92f-8c625df9f1cd" />
 
+## Soal 6
 
+<img width="839" height="454" alt="image" src="https://github.com/user-attachments/assets/9073d9bd-faa2-43ff-8390-1d0445f0a919" />
 
+## Soal 7
+
+## Soal 8
+
+## Soal 9
+
+## Soal 10
+
+## Soal 11
