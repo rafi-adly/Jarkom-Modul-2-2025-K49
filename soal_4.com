@@ -26,7 +26,7 @@ $TTL     604800          ; Waktu cache default (detik)
 cp /etc/bind/zone.template /etc/bind/K49/K49.com
 $TTL     604800          ; Waktu cache default (detik)
 @        IN       SOA     K49.com. root.K49.com. (
-                          2025101201 ; Serial (format YYYYMMDDXX)
+                          2025101202 ; Serial (format YYYYMMDDXX)
                           604800     ; Refresh (1 minggu)
                           86400      ; Retry (1 hari)
                           2419200    ; Expire (4 minggu)
@@ -34,7 +34,7 @@ $TTL     604800          ; Waktu cache default (detik)
 ;
 
 @        IN       NS      K49.com.
-@        IN       A       10.88.3.3 
+@        IN       A       10.88.3.2 
 Earendil IN       A       10.88.1.2
 Elwing   IN       A       10.88.1.3
 Cidran   IN       A       10.88.2.2
