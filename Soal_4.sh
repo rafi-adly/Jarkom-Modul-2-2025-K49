@@ -33,8 +33,11 @@ $TTL     604800          ; Waktu cache default (detik)
                           604800 )   ; Negative Cache TTL
 ;
 
-@        IN       NS      K49.com.
-@        IN       A       10.88.3.3 
+@       	IN 		NS 	ns1.K49.com.
+@       	IN 		NS 	ns2.K49.com.
+@       	IN 		A 	10.88.3.2
+ns1     	IN 		A 	10.88.3.3
+ns2     	IN 		A 	10.88.3.4
 > /etc/bind/K49/K49.com
 
 options {
