@@ -69,3 +69,6 @@ zone "K49.com" {
 EOF
 
 service bind9 restart
+
+# di semua console
+echo -e "nameserver 10.88.3.3\nnameserver 10.88.3.4\nnameserver 192.168.122.1" > /etc/resolv.conf
