@@ -1,5 +1,7 @@
 nano soal_6.sh
 
+chmod +x soal_6.sh
+
 #!/bin/bash
 # Script verifikasi zone transfer antara ns1 (Tirion) dan ns2 (Valmar)
 
