@@ -1,7 +1,14 @@
+# Di Tirion
+service bind9 restart
+
+# Di Valmar
+chown -R bind:bind /etc/bind/K49
+chmod 755 /etc/bind/K49
+
+service bind9 restart
+
 nano soal_6.sh
-
-chmod +x soal_6.sh
-
+# ini soal_6.sh
 #!/bin/bash
 # Script verifikasi zone transfer antara ns1 (Tirion) dan ns2 (Valmar)
 
@@ -41,7 +48,7 @@ fi
 echo
 echo "=== Selesai ==="
 
-# di Valmar
+# di Valmar jalankan
 chown -R bind:bind /etc/bind/K49
 chmod 755 /etc/bind/K49
 
