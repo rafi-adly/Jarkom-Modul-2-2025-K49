@@ -1,8 +1,14 @@
 # Sirion
 
-apt update && apt install nginx apache2-utils -y
+apt update && apt install nginx -y
 
-# Menggunakan DUA Server Block untuk stabilitas (BLOK 1: Redirect, BLOK 2: Proxy)
+cat > /etc/resolv.conf <<EOF_RESOLVER
+nameserver 10.88.3.3
+nameserver 10.88.3.4
+nameserver 192.168.122.1
+search jarkomK49.com
+EOF_RESOLVER
+
 cat > /etc/nginx/sites-available/reverse_proxy.conf <<'EOF'
 
 # BLOK 1: REDIRECT HOSTNAME NON-KANONIK (sirion.jarkomK49.com)
@@ -38,16 +44,15 @@ server {
         proxy_redirect off;
     }
     
-    # Default 404
+    # Default 404 
     location / {
-        return 404 "Sirion: Endpoint tidak ditemukan. Coba /static/annals/ atau /app/.";
+        return 404 "Sirion: Endpoint tidak ditemukan. Coba /static/ atau /app/.";
     }
 }
 EOF
 
 ln -sf /etc/nginx/sites-available/reverse_proxy.conf /etc/nginx/sites-enabled/
-rm -f /etc/nginx/sites-enabled/default
-
+rm -f /etc/nginx/sites-enabled/default 
 nginx -t
 service nginx restart
 
