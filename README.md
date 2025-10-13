@@ -165,6 +165,18 @@ Earendil
 
 ## Soal 9
 
+Lindon
+
+<img width="1001" height="686" alt="image" src="https://github.com/user-attachments/assets/ade9e844-6fa2-4854-90a6-a7105c337d1d" />
+
+Earendil (Timur)
+
+<img width="1104" height="211" alt="image" src="https://github.com/user-attachments/assets/2a96ddc9-e114-43fc-a96f-a8a3797c878c" />
+
+Cirdan (Barat)
+
+<img width="1201" height="209" alt="image" src="https://github.com/user-attachments/assets/b96c485b-1690-461d-bbbc-092cc76e353e" />
+
 ## Soal 10
 
 ## Soal 11
