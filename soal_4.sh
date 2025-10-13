@@ -20,6 +20,19 @@ zone "jarkomK49.com" {
 };
 EOF
 
+cat > /etc/bind/zone.template<<'EOF'
+$TTL     604800          ; Waktu cache default (detik)
+@        IN      SOA     localhost. root.localhost. (
+                         2025101302 ; Serial (format YYYYMMDDXX)
+                         604800     ; Refresh (1 minggu)
+                         86400      ; Retry (1 hari)
+                         2419200    ; Expire (4 minggu)
+                         604800 )   ; Negative Cache TTL
+;
+
+@        IN      NS      localhost.
+@        IN      A       127.0.0.1
+EOF
 
 cat > /etc/bind/K49/jarkomK49.com<<'EOF'
 $TTL 604800
