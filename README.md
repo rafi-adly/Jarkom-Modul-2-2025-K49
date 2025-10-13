@@ -190,7 +190,7 @@ Cirdan
 ## Soal 11
 
 Sirion
-<img width="1243" height="956" alt="image" src="https://github.com/user-attachments/assets/f55affaf-0324-4b5f-80a1-01c0cf086f6e" />
+<img width="1328" height="1108" alt="image" src="https://github.com/user-attachments/assets/ef57b2f9-bc06-4acc-aefc-5a1e99d80199" />
 
 Earendil
 <img width="1440" height="445" alt="Screenshot 2025-10-13 200550" src="https://github.com/user-attachments/assets/c70b644b-18c0-4a4d-b7d0-c053f1164b7c" />
