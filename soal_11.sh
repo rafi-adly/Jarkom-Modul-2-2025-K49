@@ -1,20 +1,25 @@
 # Sirion
 
-# Instalasi Nginx
-apt update
-apt install nginx -y
+apt update && apt install nginx apache2-utils -y
 
-# Konfigurasi Nginx untuk reverse proxy
+# Menggunakan DUA Server Block untuk stabilitas (BLOK 1: Redirect, BLOK 2: Proxy)
 cat > /etc/nginx/sites-available/reverse_proxy.conf <<'EOF'
+
+# BLOK 1: REDIRECT HOSTNAME NON-KANONIK (sirion.jarkomK49.com)
 server {
     listen 80;
-    server_name www.jarkomK49.com sirion.jarkomK49.com;
+    server_name sirion.jarkomK49.com;
+    
+    # Redirect 301 yang aman ke hostname kanonik
+    return 301 http://www.jarkomK49.com$request_uri;
+}
 
-    # Penanganan Kanonik (sirion.com -> www.com)
-    if ($host = 'sirion.jarkomK49.com') {
-        return 301 http://www.jarkomK49.com$request_uri;
-    }
 
+# BLOK 2: HOSTNAME KANONIK & REVERSE PROXY (www.jarkomK49.com)
+server {
+    listen 80;
+    server_name www.jarkomK49.com;
+    
     # Routing: /static -> Lindon (10.88.3.5)
     location /static/ {
         proxy_pass http://10.88.3.5/;
@@ -40,11 +45,10 @@ server {
 }
 EOF
 
-# Aktifkan konfigurasi
 ln -sf /etc/nginx/sites-available/reverse_proxy.conf /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 
-# Restart Nginx
+nginx -t
 service nginx restart
 
 # Di client
