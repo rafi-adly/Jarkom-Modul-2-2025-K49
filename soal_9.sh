@@ -9,12 +9,12 @@ nameserver 10.88.3.4
 nameserver 192.168.122.1 
 EOF
 
-# 2. Buat folder arsip dan file dummy
+# Buat folder arsip dan file dummy
 mkdir -p /var/www/html/annals/
 echo "Konten Arsip 1" > /var/www/html/annals/arsip_1.txt
 echo "Konten Arsip 2" > /var/www/html/annals/arsip_2.txt
 
-# 3. Konfigurasi Nginx untuk static.jarkomK49.com dengan autoindex
+# Konfigurasi Nginx untuk static.jarkomK49.com dengan autoindex
 cat > /etc/nginx/sites-available/static.conf <<'EOF'
 server {
     listen 80;
@@ -33,9 +33,13 @@ server {
 }
 EOF
 
-# 4. Aktifkan konfigurasi
+# Aktifkan konfigurasi
 ln -s /etc/nginx/sites-available/static.conf /etc/nginx/sites-enabled/
 rm /etc/nginx/sites-enabled/default
 
-# 5. Restart Nginx
+# Restart Nginx
 service nginx restart
+
+
+# tes di client timur / barat
+curl http://static.jarkomK49.com/annals/
