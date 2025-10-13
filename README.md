@@ -173,7 +173,7 @@ Earendil (Timur)
 
 <img width="1104" height="211" alt="image" src="https://github.com/user-attachments/assets/2a96ddc9-e114-43fc-a96f-a8a3797c878c" />
 
-Cirdan (Barat)
+Cidran (Barat)
 
 <img width="1201" height="209" alt="image" src="https://github.com/user-attachments/assets/b96c485b-1690-461d-bbbc-092cc76e353e" />
 
@@ -183,7 +183,7 @@ Vingilot
 
 <img width="1304" height="1001" alt="image" src="https://github.com/user-attachments/assets/16be753e-8ce7-4779-b5d1-811e102bff6f" />
 
-Cirdan
+Cidran
 
 <img width="1499" height="96" alt="image" src="https://github.com/user-attachments/assets/4677c40b-c3b7-4303-b871-8b2fc5a53143" />
 
@@ -196,6 +196,11 @@ Earendil
 <img width="1440" height="445" alt="Screenshot 2025-10-13 200550" src="https://github.com/user-attachments/assets/c70b644b-18c0-4a4d-b7d0-c053f1164b7c" />
 
 ## Soal 12
+Sirion
+<img width="1093" height="848" alt="image" src="https://github.com/user-attachments/assets/8a9a5a50-4f5c-452a-8727-dd9dba0cd1e2" />
+
+Cidran
+<img width="1050" height="380" alt="image" src="https://github.com/user-attachments/assets/24514c3a-5994-4516-90da-d1a0558483e3" />
 
 ## Soal 13
 
