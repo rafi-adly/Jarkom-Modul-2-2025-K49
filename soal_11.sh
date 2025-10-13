@@ -1,6 +1,6 @@
 # Sirion
 
-apt update && apt install nginx -y
+apt update && apt install nginx -y && apt install apache2-utils -y
 
 cat > /etc/resolv.conf <<EOF_RESOLVER
 nameserver 10.88.3.3
