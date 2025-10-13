@@ -6,30 +6,25 @@ apt install nginx -y
 
 # Konfigurasi Nginx untuk reverse proxy
 cat > /etc/nginx/sites-available/reverse_proxy.conf <<'EOF'
-# BLOK 1: HOSTNAME NON-KANONIK (REDIRECT 301)
 server {
     listen 80;
-    server_name sirion.jarkomK49.com;
-    
-    # LANGSUNG LAKUKAN REDIRECT
-    return 301 http://www.jarkomK49.com$request_uri;
-}
+    server_name www.jarkomK49.com sirion.jarkomK49.com;
 
-# BLOK 2: HOSTNAME KANONIK (REVERSE PROXY)
-server {
-    listen 80;
-    server_name www.jarkomK49.com;
-    
-    # Path-based routing: /static -> Lindon (10.88.3.5)
+    # Penanganan Kanonik (sirion.com -> www.com)
+    if ($host = 'sirion.jarkomK49.com') {
+        return 301 http://www.jarkomK49.com$request_uri;
+    }
+
+    # Routing: /static -> Lindon (10.88.3.5)
     location /static/ {
-        proxy_pass http://10.88.3.5/; 
+        proxy_pass http://10.88.3.5/;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_redirect off;
     }
 
-    # Path-based routing: /app -> Vingilot (10.88.3.6)
+    # Routing: /app -> Vingilot (10.88.3.6)
     location /app/ {
         proxy_pass http://10.88.3.6/;
         proxy_set_header Host $host;
