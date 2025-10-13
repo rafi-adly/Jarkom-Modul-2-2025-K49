@@ -179,4 +179,12 @@ Cirdan (Barat)
 
 ## Soal 10
 
+Vingilot
+
+<img width="1304" height="1001" alt="image" src="https://github.com/user-attachments/assets/16be753e-8ce7-4779-b5d1-811e102bff6f" />
+
+Cirdan
+
+<img width="1499" height="96" alt="image" src="https://github.com/user-attachments/assets/4677c40b-c3b7-4303-b871-8b2fc5a53143" />
+
 ## Soal 11
