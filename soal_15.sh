@@ -1,3 +1,5 @@
+apt update && apt install apache2-utils -y
+
 echo "=== HASIL UJI /app/ (Vingilot) ==="
 ab -n 500 -c 10 http://www.jarkomK49.com/app/
 
