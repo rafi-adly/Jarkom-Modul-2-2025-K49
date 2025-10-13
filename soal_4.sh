@@ -1,6 +1,3 @@
-apt-get update
-apt-get install ifupdown -y
-
 # Tirion (ns1 / master)
 apt-get update
 apt-get install ifupdown -y
