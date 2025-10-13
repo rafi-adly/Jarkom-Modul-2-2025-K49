@@ -31,7 +31,7 @@ nameserver 192.168.122.1  # fallback Internet
 EOF
 
 # ke host non router
-cat > /etc/resolv.conf
+cat > /etc/resolv.conf << EOF
 nameserver 10.88.3.3
 nameserver 10.88.3.4
 nameserver 192.168.122.1
