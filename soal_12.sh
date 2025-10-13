@@ -1,4 +1,5 @@
 # Sirion
+apt update && apt install apache2-utils -y
 
 htpasswd -c /etc/nginx/htpasswd.sirion admin
 # CATATAN: Masukkan password 'sirionpass' saat diminta.
