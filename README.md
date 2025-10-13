@@ -211,4 +211,10 @@ Elrond (Client)
 
 ## Soal 14
 
+Vingilot
+<img width="1171" height="471" alt="image" src="https://github.com/user-attachments/assets/7049bcca-9a15-42c9-b541-c26c9dfccead" />
+
+Elrond
+<img width="1669" height="151" alt="image" src="https://github.com/user-attachments/assets/07239a9c-515e-417e-a761-50b5ae147f2e" />
+
 ## Soal 15
