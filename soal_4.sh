@@ -36,7 +36,7 @@ EOF
 
 cat > /etc/bind/K49/jarkomK49.com<<'EOF'
 $TTL 604800
-@       IN SOA ns1.jarkomK49.com root.jarkomK49.com (
+@       IN SOA ns1.jarkomK49.com. root.jarkomK49.com. (
             2025101302 ; Serial YYYYMMDDXX
             604800     ; Refresh 1 minggu
             86400      ; Retry 1 hari
