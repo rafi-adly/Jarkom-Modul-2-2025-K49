@@ -30,12 +30,13 @@ nameserver 10.88.3.4   # ns2.jarkomK49.com
 nameserver 192.168.122.1  # fallback Internet
 EOF
 
-cat > /etc/resolv.conf <<EOF_DNS
+# ke host non router
+cat > /etc/resolv.conf
 nameserver 10.88.3.3
 nameserver 10.88.3.4
 nameserver 192.168.122.1
 search jarkomK49.com
-EOF_DNS
+EOF
 
 # Verif DNS internal
 # Cek apex domain
