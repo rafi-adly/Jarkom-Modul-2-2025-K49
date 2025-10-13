@@ -218,3 +218,7 @@ Elrond
 <img width="1669" height="151" alt="image" src="https://github.com/user-attachments/assets/07239a9c-515e-417e-a761-50b5ae147f2e" />
 
 ## Soal 15
+
+<img width="1007" height="1133" alt="image" src="https://github.com/user-attachments/assets/91f120cf-8815-45f5-81f5-a1dd971a3687" />
+
+<img width="1119" height="1213" alt="image" src="https://github.com/user-attachments/assets/58db2720-6ba3-4dea-ada1-102f040548a2" />
