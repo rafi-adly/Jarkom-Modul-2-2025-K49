@@ -203,6 +203,11 @@ Cidran
 <img width="1050" height="380" alt="image" src="https://github.com/user-attachments/assets/24514c3a-5994-4516-90da-d1a0558483e3" />
 
 ## Soal 13
+Sirion
+<img width="1894" height="200" alt="image" src="https://github.com/user-attachments/assets/28e1b7cd-2d1f-4689-a654-16ae1e7dfd6b" />
+
+Elrond (Client)
+<img width="865" height="588" alt="image" src="https://github.com/user-attachments/assets/3efe5ff4-eb30-4e15-8919-b174a8e4384f" />
 
 ## Soal 14
 
