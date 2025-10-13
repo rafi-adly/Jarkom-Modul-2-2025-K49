@@ -49,8 +49,7 @@ echo
 echo "=== Selesai ==="
 
 # di Valmar jalankan
-chown -R bind:bind /etc/bind/K49
-chmod 755 /etc/bind/K49
+chmod +x soal_6.sh
 
 service bind9 restart
 
