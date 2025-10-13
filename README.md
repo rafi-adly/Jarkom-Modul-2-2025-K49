@@ -188,3 +188,17 @@ Cirdan
 <img width="1499" height="96" alt="image" src="https://github.com/user-attachments/assets/4677c40b-c3b7-4303-b871-8b2fc5a53143" />
 
 ## Soal 11
+
+Sirion
+<img width="1243" height="956" alt="image" src="https://github.com/user-attachments/assets/f55affaf-0324-4b5f-80a1-01c0cf086f6e" />
+
+Earendil
+<img width="1440" height="445" alt="Screenshot 2025-10-13 200550" src="https://github.com/user-attachments/assets/c70b644b-18c0-4a4d-b7d0-c053f1164b7c" />
+
+## Soal 12
+
+## Soal 13
+
+## Soal 14
+
+## Soal 15
