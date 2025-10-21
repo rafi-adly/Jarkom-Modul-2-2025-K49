@@ -1,14 +1,8 @@
-# Vingilot
-nano /etc/nginx/sites-available/app.conf
+# SIRION
+echo "--- 1. Tambah Redirect IP 10.88.3.2 ---"
 
-# tambahkan ini ke dalam server { ... }
-access_log /var/log/nginx/access.log main;
+# Menyisipkan server block baru di baris pertama file reverse_proxy.conf
+sed -i '1s/^/server {\n    listen 80;\n    server_name 10.88.3.2; \n\n    return 301 http:\/\/www.jarkomK49.com\$request_uri;\n}\n\n/' /etc/nginx/sites-available/reverse_proxy.conf
 
 nginx -t
-sever nginx stop
-server nginx start
-
-tail /var/log/nginx/access.log
-
-# Di client
-curl http://www.jarkomK49.com/app/
+service nginx restart
