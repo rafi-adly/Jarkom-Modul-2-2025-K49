@@ -742,25 +742,25 @@ Langkah ini penting untuk memonitor trafik, debugging, dan analisis aktivitas pe
 ### 🌐 Konfigurasi & Pengujian Load Balancer (Nginx)
 ### Server: Vingilot (menangani /app/)
 
-### 1️⃣ Update package list dan install apache2-utils untuk benchmark (ab)
+### 1️. Update package list dan install apache2-utils untuk benchmark (ab)
 apt update && apt install apache2-utils -y
 
-### 2️⃣ Buka konfigurasi virtual host Nginx untuk aplikasi
+### 2️. Buka konfigurasi virtual host Nginx untuk aplikasi
 nano /etc/nginx/sites-available/app.conf
 
-### 3️⃣ Tambahkan baris ini di dalam blok `server { ... }` untuk mencatat akses log
+### 3. Tambahkan baris ini di dalam blok `server { ... }` untuk mencatat akses log
 ``` access_log /var/log/nginx/access.log main;```
 
-### 4️⃣ Uji apakah konfigurasi Nginx valid
+### 4. Uji apakah konfigurasi Nginx valid
 nginx -t
 
-### 5️⃣ Restart Nginx agar perubahan diterapkan
+### 5. Restart Nginx agar perubahan diterapkan
 ### Gunakan perintah yang benar (bukan 'sever')
 ```
 systemctl stop nginx
 systemctl start nginx
 ```
-### 6️⃣ Pastikan log akses sudah aktif
+### 6. Pastikan log akses sudah aktif
 ```tail /var/log/nginx/access.log```
 
 ### 🧪 Pengujian Load Balancing
