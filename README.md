@@ -133,21 +133,602 @@ Pertama, tambahkan resolver `up echo nameserver 192.168.122.1 > /etc/resolv.conf
 
 <img width="1051" height="615" alt="image" src="https://github.com/user-attachments/assets/37ccac16-3585-48ec-9ceb-2b36814b8c00" />
 
+konfigurasi **DNS Server Master–Slave** menggunakan **BIND9** di dua server:
+- **Tirion** sebagai **Master (ns1)**
+- **Valmar** sebagai **Slave (ns2)**
+
+---
+
+### 1. Konfigurasi di Tirion (ns1 / Master)
+
+#### 📦 Instalasi Paket
+
+```bash
+apt-get update
+apt-get install ifupdown -y
+apt-get install bind9 -y
+ln -s /etc/init.d/named /etc/init.d/bind9
+```
+
+**Penjelasan:**
+- `ifupdown` → mengelola interface jaringan (dibutuhkan untuk konfigurasi IP).
+- `bind9` → paket utama untuk DNS server.
+- `ln -s /etc/init.d/named /etc/init.d/bind9` → membuat symlink agar service `bind9` bisa dikenali dengan nama `named`.
+
+---
+
+#### 📁 Persiapan Direktori Zone
+
+```bash
+mkdir -p /etc/bind/K49
+```
+Membuat folder untuk menyimpan file zone `jarkomK49.com`.
+
+---
+
+#### 🧾 Konfigurasi Zona Master
+
+File: `/etc/bind/named.conf.local`
+
+```bash
+cat > /etc/bind/named.conf.local <<'EOF'
+zone "jarkomK49.com" {
+    type master;
+    notify yes;
+    also-notify { 10.88.3.4; };      // IP Valmar (ns2)
+    allow-transfer { 10.88.3.4; };
+    file "/etc/bind/K49/jarkomK49.com";
+};
+EOF
+```
+
+**Penjelasan:**
+- `type master` → Tirion adalah pengelola utama (sumber kebenaran DNS).
+- `notify yes` → memberitahu slave jika ada perubahan zona.
+- `also-notify` → menentukan IP slave (Valmar).
+- `allow-transfer` → mengizinkan transfer zone ke slave.
+- `file` → lokasi file zone utama.
+
+---
+
+#### 🧩 Template Zona (Opsional)
+
+File: `/etc/bind/zone.template`
+
+```bash
+cat > /etc/bind/zone.template<<'EOF'
+$TTL     604800
+@        IN      SOA     localhost. root.localhost. (
+                         2025101302
+                         604800
+                         86400
+                         2419200
+                         604800 )
+@        IN      NS      localhost.
+@        IN      A       127.0.0.1
+EOF
+```
+
+**Penjelasan:**
+Template ini berfungsi sebagai contoh struktur dasar file zone, digunakan jika ingin membuat zona baru dengan cepat.
+
+---
+
+#### 🌐 File Zone Utama
+
+File: `/etc/bind/K49/jarkomK49.com`
+
+```bash
+cat > /etc/bind/K49/jarkomK49.com<<'EOF'
+$TTL 604800
+@       IN SOA ns1.jarkomK49.com. root.jarkomK49.com. (
+            2025101302
+            604800
+            86400
+            2419200
+            604800 )
+
+@       IN NS ns1.jarkomK49.com.
+@       IN NS ns2.jarkomK49.com.
+@       IN A 10.88.3.2       ; Apex domain → Sirion (front door)
+
+; Records A
+ns1     IN A 10.88.3.3
+ns2     IN A 10.88.3.4
+Earendil IN A 10.88.1.2
+Elwing   IN A 10.88.1.3
+Cidran   IN A 10.88.2.2
+Elrond   IN A 10.88.2.3
+Maglor   IN A 10.88.2.4
+Sirion   IN A 10.88.3.2
+Lindon   IN A 10.88.3.5
+Vingilot IN A 10.88.3.6
+
+; Alias / CNAME
+www      IN CNAME Sirion.jarkomK49.com.
+static   IN CNAME Lindon.jarkomK49.com.
+app      IN CNAME Vingilot.jarkomK49.com.
+EOF
+```
+
+**Penjelasan:**
+- `SOA` (Start of Authority) → menandakan awal dari definisi domain.
+- `NS` → mendefinisikan authoritative name server (ns1 dan ns2).
+- `A` → record alamat IP untuk masing-masing host.
+- `CNAME` → alias untuk domain lain (misal `www` menunjuk ke `Sirion`).
+
+---
+
+#### ⚙️ Konfigurasi Opsi Global BIND9
+
+File: `/etc/bind/named.conf.options`
+
+```bash
+cat > /etc/bind/named.conf.options <<'EOF'
+options {
+    directory "/var/cache/bind";
+    dnssec-validation no;
+    forwarders { 192.168.122.1; };
+    allow-query { any; };
+    auth-nxdomain no;
+    listen-on-v6 { any; };
+};
+EOF
+```
+
+**Penjelasan:**
+- `forwarders` → DNS akan meneruskan query yang tidak dikenalnya ke DNS eksternal (misal milik gateway).
+- `allow-query { any; };` → memperbolehkan semua host melakukan query.
+- `dnssec-validation no;` → mematikan DNSSEC (untuk kesederhanaan di lingkungan lab).
+- `listen-on-v6 { any; };` → mengizinkan IPv6.
+
+---
+
+#### Restart Service
+
+```bash
+service bind9 restart
+```
+
+---
+
+### 🧩 2. Konfigurasi di Valmar (ns2 / Slave)
+
+#### 📦 Instalasi Paket
+
+```bash
+apt-get update
+apt-get install ifupdown -y
+apt-get install bind9 -y
+ln -s /etc/init.d/named /etc/init.d/bind9
+```
+
+**Penjelasan:**
+Sama seperti master, hanya saja nanti konfigurasi zona akan bertipe **slave**.
+
+---
+
+#### 📁 Direktori Zona
+
+```bash
+mkdir -p /etc/bind/K49
+```
+
+---
+
+#### 🧾 Konfigurasi Zona Slave
+
+File: `/etc/bind/named.conf.local`
+
+```bash
+cat > /etc/bind/named.conf.local <<'EOF'
+zone "jarkomK49.com" {
+    type slave;
+    masters { 10.88.3.3; };           // IP Tirion / ns1
+    file "/etc/bind/K49/jarkomK49.com";
+};
+EOF
+```
+
+**Penjelasan:**
+- `type slave` → server ini hanya menerima salinan data dari master.
+- `masters` → IP server master yang berwenang.
+- `file` → lokasi file zona hasil transfer otomatis dari master.
+
+---
+
+#### ⚙️ Konfigurasi Global Options
+
+File: `/etc/bind/named.conf.options`
+
+```bash
+cat > /etc/bind/named.conf.options <<'EOF'
+options {
+    directory "/var/cache/bind";
+    dnssec-validation no;
+    forwarders { 192.168.122.1; };
+    allow-query { any; };
+    auth-nxdomain no;
+    listen-on-v6 { any; };
+};
+EOF
+```
+
+**Penjelasan:**
+Sama seperti konfigurasi pada master — memastikan DNS slave juga bisa menerima query dan forward ke DNS eksternal.
+
+---
+
+#### 🔄 Restart Service
+
+```bash
+service bind9 restart
+```
+
+---
+
+### 🧪 3. Verifikasi Master–Slave
+
+Jalankan pada **Valmar (ns2)**:
+
+```bash
+ls -l /etc/bind/K49/
+```
+Jika berhasil, akan muncul file:
+```
+jarkomK49.com
+```
+File ini di-*transfer* otomatis dari Tirion (ns1).
+
+---
+
+#### 🔍 Uji Coba Resolusi DNS
+
+Dari **client atau server lain**, jalankan:
+
+```bash
+dig @10.88.3.3 www.jarkomK49.com
+dig @10.88.3.4 static.jarkomK49.com
+dig @10.88.3.3 app.jarkomK49.com
+```
+
+**Hasil yang diharapkan:**
+- Semua query memberikan IP yang sesuai (`Sirion`, `Lindon`, `Vingilot`).
+- DNS slave juga merespons sama seperti master.
+
+---
+
+### ✅ Kesimpulan
+
+| Komponen | Peran | IP | Keterangan |
+|-----------|--------|------|-------------|
+| **Tirion** | Master (ns1) | 10.88.3.3 | Sumber utama data zona |
+| **Valmar** | Slave (ns2) | 10.88.3.4 | Menerima salinan dari master |
+| **Sirion** | Front Door / Web | 10.88.3.2 | A record utama domain |
+| **Lindon** | Static Content | 10.88.3.5 | CNAME: `static` |
+| **Vingilot** | App Service | 10.88.3.6 | CNAME: `app` |
+
+Dengan konfigurasi ini, sistem DNS kamu memiliki **redundansi dan ketersediaan tinggi**, karena jika **master gagal**, **slave tetap bisa melayani query DNS.**
+
+
 ## Soal 5
 
 <img width="1048" height="203" alt="image" src="https://github.com/user-attachments/assets/9303c2fe-88ce-43d4-a69d-c7c893a80c44" />
 
 <img width="957" height="187" alt="image" src="https://github.com/user-attachments/assets/a3cbcc01-a7e3-4198-a92f-8c625df9f1cd" />
 
+Dokumentasi ini menjelaskan langkah konfigurasi identitas host dan DNS resolver untuk seluruh node dalam jaringan **jarkomK49.com**.
+
+---
+
+### 🏷️ 1. Set Hostname di Setiap Host
+
+Setiap node diberikan nama unik menggunakan perintah `hostname` berikut:
+
+```bash
+hostname earendil
+hostname elwing
+hostname cirdan
+hostname elrond
+hostname maglor
+hostname sirion
+hostname lindon
+hostname vingilot
+```
+
+**Penjelasan:**
+- Perintah ini mengatur **hostname permanen** untuk setiap mesin agar mudah dikenali di jaringan.
+- Misalnya, mesin dengan IP `10.88.1.2` diatur menjadi `earendil`.
+
+---
+
+### 📜 2. Konfigurasi `/etc/hosts`
+
+File `/etc/hosts` digunakan untuk pemetaan IP ke hostname secara lokal di setiap host.
+
+```bash
+cat > /etc/hosts <<EOF
+127.0.0.1       localhost
+10.88.3.3       ns1.jarkomK49.com     ns1
+10.88.3.4       ns2.jarkomK49.com     ns2
+10.88.3.2       sirion.jarkomK49.com  sirion
+10.88.3.5       lindon.jarkomK49.com  lindon
+10.88.3.6       vingilot.jarkomK49.com vingilot
+10.88.1.2       earendil.jarkomK49.com earendil
+10.88.1.3       elwing.jarkomK49.com   elwing
+10.88.2.2       cirdan.jarkomK49.com   cirdan
+10.88.2.3       elrond.jarkomK49.com   elrond
+10.88.2.4       maglor.jarkomK49.com   maglor
+EOF
+```
+
+**Penjelasan:**
+- Memastikan setiap host bisa saling mengenali tanpa bergantung ke DNS eksternal.
+- Nama domain internal `jarkomK49.com` digunakan agar konsisten dengan konfigurasi DNS Master–Slave sebelumnya.
+
+---
+
+### 🌐 3. Konfigurasi `/etc/resolv.conf`
+
+#### 📌 Untuk Router dan Server Utama (ns1, ns2, sirion, dll)
+
+```bash
+cat > /etc/resolv.conf <<EOF
+nameserver 10.88.3.3   # ns1.jarkomK49.com
+nameserver 10.88.3.4   # ns2.jarkomK49.com
+nameserver 192.168.122.1  # fallback Internet
+EOF
+```
+
+#### 📌 Untuk Host Non-Router (client biasa)
+
+```bash
+cat > /etc/resolv.conf << EOF
+nameserver 10.88.3.3
+nameserver 10.88.3.4
+nameserver 192.168.122.1
+search jarkomK49.com
+EOF
+```
+
+**Penjelasan:**
+- `nameserver` → menentukan urutan DNS yang digunakan untuk resolusi nama.
+- `search jarkomK49.com` → menambahkan domain default sehingga cukup mengetik `sirion` tanpa domain lengkap.
+
+---
+
+### 🔍 4. Verifikasi DNS Internal
+
+#### 🧾 Cek Apex Domain
+
+```bash
+dig @10.88.3.3 jarkomK49.com
+dig @10.88.3.4 jarkomK49.com
+```
+
+**Tujuan:** memastikan domain utama `jarkomK49.com` dapat diresolusikan dari master maupun slave DNS.
+
+---
+
+#### 🌎 Cek Hostname Layanan
+
+```bash
+dig @10.88.3.3 www.jarkomK49.com
+dig @10.88.3.4 www.jarkomK49.com
+```
+
+**Tujuan:** memverifikasi record `CNAME` atau `A` dari domain layanan (`www`, `static`, `app`) bekerja dengan benar.
+
+---
+
+#### 📡 Cek Konektivitas via Hostname
+
+```bash
+ping -c 3 sirion.jarkomK49.com 
+ping -c 3 lindon.jarkomK49.com 
+ping -c 3 vingilot.jarkomK49.com
+ping -c 3 earendil.jarkomK49.com
+ping -c 3 elwing.jarkomK49.com 
+ping -c 3 cirdan.jarkomK49.com   
+ping -c 3 elrond.jarkomK49.com 
+ping -c 3 maglor.jarkomK49.com
+```
+
+**Tujuan:** memastikan setiap host dapat di-*resolve* dan dijangkau melalui DNS internal.
+
+---
+
+#### ✅ 5. Kesimpulan
+
+| Hostname | IP Address | Fungsi |
+|-----------|-------------|--------|
+| ns1 | 10.88.3.3 | DNS Master (Tirion) |
+| ns2 | 10.88.3.4 | DNS Slave (Valmar) |
+| sirion | 10.88.3.2 | Web Front Door |
+| lindon | 10.88.3.5 | Static Server |
+| vingilot | 10.88.3.6 | App Server |
+| earendil | 10.88.1.2 | Client / Node 1 |
+| elwing | 10.88.1.3 | Client / Node 2 |
+| cirdan | 10.88.2.2 | Server Internal 1 |
+| elrond | 10.88.2.3 | Server Internal 2 |
+| maglor | 10.88.2.4 | Server Internal 3 |
+
+Dengan konfigurasi ini, seluruh node di jaringan **K49** dapat:
+- Melakukan resolusi nama antar host secara internal.  
+- Terhubung ke DNS master–slave.  
+- Tetap memiliki fallback DNS eksternal untuk akses Internet.
+
+---
+
 ## Soal 6
 
 <img width="885" height="576" alt="image" src="https://github.com/user-attachments/assets/03da962c-7a9d-47f4-8470-00812d139096" />
+
+### 🖥️ Di Tirion (ns1)
+```bash
+service bind9 restart
+```
+
+---
+
+### 🖥️ Di Valmar (ns2)
+
+#### 1. Atur permission direktori zone
+```bash
+chown -R bind:bind /etc/bind/K49
+chmod 755 /etc/bind/K49
+```
+
+#### 2. Restart service BIND9
+```bash
+service bind9 restart
+```
+
+#### 3. Buat file verifikasi `soal_6.sh`
+```bash
+nano soal_6.sh
+```
+
+Isi file:
+```bash
+#!/bin/bash
+# Script verifikasi zone transfer antara ns1 (Tirion) dan ns2 (Valmar)
+
+ZONENAME="jarkomK49.com"
+MASTER_IP="10.88.3.3"
+SLAVE_IP="10.88.3.4"
+
+echo "=== 🔍 Mengecek zone transfer $ZONENAME ==="
+echo
+
+# Cek SOA serial dari ns1
+SERIAL_MASTER=$(dig @$MASTER_IP $ZONENAME SOA +short | awk '{print $3}')
+# Cek SOA serial dari ns2
+SERIAL_SLAVE=$(dig @$SLAVE_IP $ZONENAME SOA +short | awk '{print $3}')
+
+echo "SOA Serial di ns1 (Tirion)  : $SERIAL_MASTER"
+echo "SOA Serial di ns2 (Valmar)  : $SERIAL_SLAVE"
+echo
+
+if [ "$SERIAL_MASTER" == "$SERIAL_SLAVE" ] && [ -n "$SERIAL_MASTER" ]; then
+    echo "✅ Zone transfer BERHASIL — serial sama di master & slave."
+else
+    echo "❌ Zone transfer BELUM sinkron."
+    echo "Mencoba memicu retransfer otomatis..."
+    rndc retransfer $ZONENAME
+    sleep 3
+
+    SERIAL_SLAVE_NEW=$(dig @$SLAVE_IP $ZONENAME SOA +short | awk '{print $3}')
+    if [ "$SERIAL_MASTER" == "$SERIAL_SLAVE_NEW" ]; then
+        echo "✅ Setelah retransfer, zona sinkron!"
+    else
+        echo "⚠️ Zona masih belum sinkron, cek syslog untuk error:"
+        echo "   tail -n 10 /var/log/syslog"
+    fi
+fi
+
+echo
+echo "=== Selesai ==="
+```
+
+#### 4. Ubah permission script agar bisa dieksekusi
+```bash
+chmod +x soal_6.sh
+```
+
+#### 5. Restart ulang BIND9
+```bash
+service bind9 restart
+```
+
+#### 6. Verifikasi file zone di direktori
+```bash
+ls -l /etc/bind/K49/
+```
 
 ## Soal 7
 
 <img width="1036" height="330" alt="image" src="https://github.com/user-attachments/assets/81a85d17-06a2-46cc-b906-11ddc904d411" />
 
 <img width="1006" height="589" alt="image" src="https://github.com/user-attachments/assets/41bda45d-4842-4f62-9105-f1bc1e530df7" />
+
+### 1. Uji Koneksi ke DNS Server
+Pastikan client dapat berkomunikasi dengan kedua DNS server (ns1 dan ns2):
+```
+ping 10.88.3.3 -c 3
+ping 10.88.3.4 -c 3
+```
+### 2. Update Resolver di Client
+Edit `/etc/resolv.conf` agar client dapat melakukan query ke DNS internal:
+```
+cat > /etc/resolv.conf <<EOF
+nameserver 10.88.3.3   # ns1.jarkomK49.com
+nameserver 10.88.3.4   # ns2.jarkomK49.com
+nameserver 192.168.122.1  # fallback Internet
+EOF
+```
+### 3. Script Verifikasi DNS (`soal_7.sh`)
+Buat file script berikut di client timur dan barat untuk memastikan semua hostname mengarah ke IP yang benar.
+`nano soal_7.sh` yang isinya
+```
+#!/bin/bash
+
+DOMAIN="jarkomK49.com"
+HOSTNAMES=(
+    "sirion.$DOMAIN"
+    "lindon.$DOMAIN"
+    "vingilot.$DOMAIN"
+    "www.$DOMAIN"
+    "static.$DOMAIN"
+    "app.$DOMAIN"
+)
+
+EXPECTED_IP=(
+    "10.88.3.2" # Sirion
+    "10.88.3.5" # Lindon
+    "10.88.3.6" # Vingilot
+    "10.88.3.2" # www -> Sirion
+    "10.88.3.5" # static -> Lindon
+    "10.88.3.6" # app -> Vingilot
+)
+
+echo "=== Verifikasi Peta Kota dan Pelabuhan ($DOMAIN) ==="
+echo "Dijalankan dari host: $(hostname)"
+echo "----------------------------------------------------"
+
+ALL_PASS=true
+FAIL_COUNT=0
+
+for i in "${!HOSTNAMES[@]}"; do
+    HOSTNAME=${HOSTNAMES[$i]}
+    EXPECTED=${EXPECTED_IP[$i]}
+    
+    RESULT=$(dig $HOSTNAME +short | tail -n 1)
+
+    if [ "$RESULT" == "$EXPECTED" ]; then
+        echo "✅ PASS: $HOSTNAME resolves ke $RESULT (sesuai target: $EXPECTED)"
+    else
+        echo "❌ FAIL: $HOSTNAME resolves ke $RESULT (TIDAK sesuai target: $EXPECTED)"
+        ALL_PASS=false
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
+done
+
+echo "----------------------------------------------------"
+if $ALL_PASS; then
+    echo "🎉 SEMUA $i HOSTNAME BERHASIL diresolve dengan KONSISTEN."
+else
+    echo "⚠️ Verifikasi GAGAL. Terdapat $FAIL_COUNT hostname yang tidak konsisten."
+fi
+echo "=== Selesai Verifikasi Nomor 7 ==="
+```
+
+### 4. Beri Izin Eksekusi & Jalankan
+```
+chmod +x soal_7.sh
+./soal_7.sh
+```
+💡 Jalankan di client timur dan barat, hasilnya harus sama.
 
 ## Soal 8
 
@@ -162,6 +743,126 @@ Valmar
 Earendil
 
 <img width="832" height="146" alt="image" src="https://github.com/user-attachments/assets/111a13aa-eed8-4a7d-bd17-0657ba18abd6" />
+
+### Tujuan  
+Membuat **zona reverse** (`in-addr.arpa`) agar IP address dapat diterjemahkan kembali menjadi nama domain (PTR lookup).  
+Contohnya:  
+`dig -x 10.88.3.2` → menghasilkan `sirion.jarkomK49.com.`
+
+---
+
+### 1. Konfigurasi di Tirion (ns1 / Master)
+Tambahkan zona reverse baru di `/etc/bind/named.conf.local`:
+
+```
+cat >> /etc/bind/named.conf.local <<'EOF'
+
+zone "3.88.10.in-addr.arpa" {
+    type master;
+    notify yes;
+    also-notify { 10.88.3.4; };       // IP Valmar (ns2)
+    allow-transfer { 10.88.3.4; };
+    file "/etc/bind/K49/db.10.88.3";
+};
+EOF
+```
+🧠 Penjelasan:
+- zone "3.88.10.in-addr.arpa" → zona reverse untuk subnet 10.88.3.0/24 (dibalik urutan oktetnya).
+- type master → server ini adalah pengelola utama (authoritative server) untuk zona tersebut.
+- notify yes → otomatis memberi tahu slave (ns2) jika ada perubahan zona.
+- also-notify / allow-transfer → menentukan siapa yang boleh menerima salinan zona (Valmar/ns2).
+- file → lokasi penyimpanan file database PTR di master.
+
+### 2. Buat File Zona Reverse
+Buat file /etc/bind/K49/db.10.88.3 dengan isi berikut:
+```
+cat > /etc/bind/K49/db.10.88.3 <<'EOF'
+$TTL 604800
+@       IN      SOA     ns1.jarkomK49.com. root.jarkomK49.com. (
+                        2025101303 ; Serial YYYYMMDDXX
+                        604800     ; Refresh
+                        86400      ; Retry
+                        2419200    ; Expire
+                        604800 )   ; Negative Cache TTL
+
+@       IN      NS      ns1.jarkomK49.com.
+@       IN      NS      ns2.jarkomK49.com.
+
+; PTR Records untuk Layanan di DMZ (10.88.3.x)
+2       IN      PTR     sirion.jarkomK49.com.   ; 10.88.3.2
+3       IN      PTR     ns1.jarkomK49.com.      ; 10.88.3.3
+4       IN      PTR     ns2.jarkomK49.com.      ; 10.88.3.4
+5       IN      PTR     lindon.jarkomK49.com.   ; 10.88.3.5
+6       IN      PTR     vingilot.jarkomK49.com. ; 10.88.3.6
+EOF
+```
+🧠 Penjelasan:
+- $TTL → waktu cache default untuk record DNS.
+- SOA (Start of Authority) → mendefinisikan server utama dan kontak admin zona.
+- Serial → harus dinaikkan setiap kali file zona diubah (format: YYYYMMDDXX).
+- NS Records → mendefinisikan nameserver zona (ns1 dan ns2).
+- PTR Records → memetakan IP → nama domain (kebalikan dari A record).
+
+### 3. Restart Bind9 di Tirion
+Setelah konfigurasi selesai, restart service:
+`service bind9 restart`
+
+Pastikan tidak ada error syntax dengan:
+```
+named-checkconf
+named-checkzone 3.88.10.in-addr.arpa /etc/bind/K49/db.10.88.3
+```
+
+### 4. Konfigurasi di Valmar (ns2 / Slave)
+Tambahkan zona slave baru di /etc/bind/named.conf.local:
+```
+cat >> /etc/bind/named.conf.local <<'EOF'
+
+zone "3.88.10.in-addr.arpa" {
+    type slave;
+    masters { 10.88.3.3; };       // IP Tirion (ns1)
+    file "/etc/bind/K49/db.10.88.3";
+};
+EOF
+```
+
+Lalu atur permission dan restart Bind9:
+```
+chown -R bind:bind /etc/bind/K49
+chmod 755 /etc/bind/K49
+
+service bind9 restart
+```
+🧠 Penjelasan:
+- type slave → artinya server ini menerima salinan zona dari master.
+- masters { 10.88.3.3; } → alamat IP master (Tirion).
+- file → lokasi file hasil transfer zona (akan dibuat otomatis).
+- Permission penting agar user bind bisa menulis file hasil zone transfer.
+
+### 5. Verifikasi dari Client
+Gunakan dig untuk melakukan reverse lookup (PTR check):
+- Verifikasi Sirion
+  ` dig -x 10.88.3.2 +short`
+- Verifikasi Lindon
+  `dig -x 10.88.3.5 +short`
+- Verifikasi Vingilot
+  `dig -x 10.88.3.6 +short`
+  
+✅ Hasil yang Diharapkan:
+```
+sirion.jarkomK49.com.
+lindon.jarkomK49.com.
+vingilot.jarkomK49.com.
+```
+
+### Kesimpulan
+| Komponen         | Peran                  | Lokasi File                                 | Catatan                               |
+| ---------------- | ---------------------- | ------------------------------------------- | ------------------------------------- |
+| **Tirion (ns1)** | Master DNS             | `/etc/bind/K49/db.10.88.3`                  | Menyimpan data PTR utama              |
+| **Valmar (ns2)** | Slave DNS              | `/etc/bind/K49/db.10.88.3` (hasil transfer) | Sinkron otomatis dari ns1             |
+| **Zona Reverse** | `3.88.10.in-addr.arpa` | -                                           | Untuk subnet `10.88.3.0/24`           |
+| **Record PTR**   | Mapping IP → Domain    | Dalam file zona                             | Contoh: `2 PTR sirion.jarkomK49.com.` |
+
 
 ## Soal 9
 
