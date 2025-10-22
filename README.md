@@ -738,3 +738,65 @@ Langkah ini penting untuk memonitor trafik, debugging, dan analisis aktivitas pe
 <img width="1007" height="1133" alt="image" src="https://github.com/user-attachments/assets/91f120cf-8815-45f5-81f5-a1dd971a3687" />
 
 <img width="1119" height="1213" alt="image" src="https://github.com/user-attachments/assets/58db2720-6ba3-4dea-ada1-102f040548a2" />
+
+### 🌐 Konfigurasi & Pengujian Load Balancer (Nginx)
+### Server: Vingilot (menangani /app/)
+
+### 1️⃣ Update package list dan install apache2-utils untuk benchmark (ab)
+apt update && apt install apache2-utils -y
+
+### 2️⃣ Buka konfigurasi virtual host Nginx untuk aplikasi
+nano /etc/nginx/sites-available/app.conf
+
+### 3️⃣ Tambahkan baris ini di dalam blok `server { ... }` untuk mencatat akses log
+``` access_log /var/log/nginx/access.log main;```
+
+### 4️⃣ Uji apakah konfigurasi Nginx valid
+nginx -t
+
+### 5️⃣ Restart Nginx agar perubahan diterapkan
+### Gunakan perintah yang benar (bukan 'sever')
+```
+systemctl stop nginx
+systemctl start nginx
+```
+### 6️⃣ Pastikan log akses sudah aktif
+```tail /var/log/nginx/access.log```
+
+### 🧪 Pengujian Load Balancing
+Kita menggunakan 'ab' (Apache Benchmark) untuk menguji performa endpoint.
+-n 500 → total 500 request
+-c 10  → 10 concurrent users (10 pengguna bersamaan)
+
+🔹 Uji endpoint /app/ di server Vingilot
+echo "=== HASIL UJI /app/ (Vingilot) ==="
+ab -n 500 -c 10 http://www.jarkomK49.com/app/
+
+🔹 Uji endpoint /static/ di server Lindon
+echo "=== HASIL UJI /static/ (Lindon) ==="
+ab -n 500 -c 10 http://www.jarkomK49.com/static/
+
+
+### 📄 Penjelasan 
+### 1. access_log
+    → Menyimpan catatan semua request yang masuk ke Nginx.
+      Format default 'main' berisi IP, waktu, URL, dan kode status.
+
+### 2. nginx -t
+    → Mengecek apakah konfigurasi Nginx valid sebelum di-restart.
+
+### 3. systemctl stop/start nginx
+    → Me-restart Nginx agar konfigurasi baru diterapkan.
+
+### 4. tail /var/log/nginx/access.log
+    → Melihat log akses secara langsung untuk memastikan request tercatat.
+
+### 5. ab (Apache Benchmark)
+    → Alat pengujian performa untuk mengukur kecepatan respon server.
+      Hasil utama yang perlu diperhatikan:
+         - Requests per second (lebih tinggi lebih baik)
+         - Time per request (lebih rendah lebih baik)
+         - Failed requests (sebaiknya 0)
+
+### 6. Hasil uji bisa dibandingkan antara /app/ dan /static/
+    untuk melihat distribusi beban (load balancing) dan performa antar server.
