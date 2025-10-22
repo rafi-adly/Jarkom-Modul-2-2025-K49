@@ -490,7 +490,113 @@ Sirion
 Cidran
 <img width="1050" height="380" alt="image" src="https://github.com/user-attachments/assets/24514c3a-5994-4516-90da-d1a0558483e3" />
 
+### 1. Update dan Instalasi Paket
+```bash
+apt update && apt install apache2-utils -y
+```
+- `apt update` memperbarui daftar paket di sistem.
+- `apt install apache2-utils -y` menginstal utilitas tambahan untuk Apache, termasuk perintah `htpasswd` yang digunakan untuk membuat file autentikasi HTTP Basic.
 
+---
+
+### 2. Membuat File Autentikasi
+```bash
+htpasswd -c /etc/nginx/htpasswd.sirion admin
+```
+- `htpasswd` digunakan untuk membuat file yang berisi username dan password terenkripsi.
+- Opsi `-c` membuat file baru `/etc/nginx/htpasswd.sirion`.
+- Username `admin` akan dibuat, dan kamu akan diminta memasukkan password **sirionpass**.
+
+> **Catatan:** Saat diminta password, masukkan `sirionpass`.
+
+---
+
+### 3. Mengedit Konfigurasi Nginx
+```bash
+nano /etc/nginx/sites-available/reverse_proxy.conf
+```
+Tambahkan blok konfigurasi berikut di dalam file setelah `location /app`:
+
+```nginx
+location /admin/ {
+    auth_basic "Sirion Admin Area";
+    auth_basic_user_file /etc/nginx/htpasswd.sirion;
+    
+    proxy_pass http://10.88.3.6/admin/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_redirect off;
+}
+```
+#### Penjelasan:
+- `auth_basic "Sirion Admin Area";` → Menampilkan pesan autentikasi saat login.
+- `auth_basic_user_file` → Menunjuk ke file kredensial yang telah dibuat.
+- `proxy_pass` → Meneruskan permintaan ke server tujuan (`10.88.3.6`).
+- `proxy_set_header` → Mengatur header untuk mempertahankan informasi IP asli pengguna.
+- `proxy_redirect off;` → Mencegah pengalihan otomatis.
+
+---
+
+### 4. Mengatur Izin Akses File
+```bash
+chmod 644 /etc/nginx/htpasswd.sirion
+chown www-data:www-data /etc/nginx/htpasswd.sirion
+```
+- `chmod 644` → Memberikan izin baca untuk semua user, tulis hanya untuk pemilik.
+- `chown www-data:www-data` → Mengubah kepemilikan file agar sesuai dengan user dan grup Nginx.
+
+---
+
+### 5. Mengecek dan Menjalankan Nginx
+```bash
+nginx -t
+service nginx stop
+service nginx start
+```
+- `nginx -t` → Memeriksa apakah konfigurasi Nginx valid.
+- `service nginx stop/start` → Menghentikan dan memulai ulang layanan Nginx.
+
+---
+
+### 6. Mengecek Port 80
+```bash
+netstat -tuln | grep 80
+```
+- Mengecek apakah Nginx aktif dan mendengarkan di port 80 (HTTP).
+
+---
+
+### 7. Pengujian di Client (Cirdan/Erlond)
+#### Tes tanpa autentikasi:
+```bash
+curl -I http://www.jarkomK49.com/admin/
+```
+Output yang diharapkan:
+```
+HTTP/1.1 401 Authorization Required
+```
+Artinya, area `/admin` dilindungi oleh autentikasi.
+
+### Tes dengan autentikasi:
+```bash
+curl -u admin:sirionpass http://www.jarkomK49.com/admin/
+```
+Output bisa berupa:
+```
+HTTP/1.1 404 Not Found
+```
+(jika path `/admin` belum ada di server backend) atau
+```
+HTTP/1.1 200 OK
+```
+(jika halaman admin tersedia).
+
+---
+
+### Kesimpulan
+Konfigurasi ini menambahkan **proteksi Basic Auth** untuk path `/admin` di Nginx reverse proxy yang meneruskan trafik ke server backend `10.88.3.6`.  
+Hanya user dengan kredensial valid (`admin:sirionpass`) yang dapat mengakses halaman admin.
 
 ## Soal 13
 Sirion
@@ -499,6 +605,53 @@ Sirion
 Elrond (Client)
 <img width="865" height="588" alt="image" src="https://github.com/user-attachments/assets/3efe5ff4-eb30-4e15-8919-b174a8e4384f" />
 
+### 1. Menambahkan Redirect untuk IP 10.88.3.2
+```bash
+echo "--- 1. Tambah Redirect IP 10.88.3.2 ---"
+```
+Baris ini hanya menampilkan pesan ke terminal untuk menandakan langkah yang sedang dijalankan.
+
+---
+
+### 2. Menyisipkan Server Block Baru
+```bash
+sed -i '1s/^/server {\n    listen 80;\n    server_name 10.88.3.2; \n\n    return 301 http:\/\/www.jarkomK49.com\$request_uri;\n}\n\n/' /etc/nginx/sites-available/reverse_proxy.conf
+```
+#### Penjelasan:
+- **`sed -i`** → Mengedit file secara langsung (in-place).
+- **`'1s/^/.../'`** → Artinya: pada baris pertama (`1`), ganti awal baris (`^`) dengan teks yang ditentukan.
+- **Isi yang disisipkan:**
+  ```nginx
+  server {
+      listen 80;
+      server_name 10.88.3.2;
+
+      return 301 http://www.jarkomK49.com$request_uri;
+  }
+  ```
+#### Fungsi Blok Server Ini:
+- `listen 80;` → Menerima koneksi di port 80 (HTTP).
+- `server_name 10.88.3.2;` → Server ini akan menangani permintaan ke IP 10.88.3.2.
+- `return 301 http://www.jarkomK49.com$request_uri;` →
+  Melakukan **redirect permanen (HTTP 301)** dari `10.88.3.2` menuju domain `www.jarkomK49.com` sambil mempertahankan path yang diminta (`$request_uri`).
+
+Jadi, jika pengguna membuka `http://10.88.3.2/app`, akan diarahkan otomatis ke `http://www.jarkomK49.com/app`.
+
+---
+
+### 3. Mengecek Konfigurasi dan Restart Nginx
+```bash
+nginx -t
+service nginx restart
+```
+- **`nginx -t`** → Memeriksa apakah konfigurasi Nginx valid dan tidak ada error sintaks.
+- **`service nginx restart`** → Memuat ulang Nginx agar perubahan konfigurasi segera diterapkan.
+
+---
+
+### Kesimpulan
+Perintah ini menambahkan konfigurasi otomatis di bagian atas file `/etc/nginx/sites-available/reverse_proxy.conf` agar setiap akses ke **IP 10.88.3.2** otomatis **di-redirect permanen (HTTP 301)** ke domain **www.jarkomK49.com**, dengan path yang sama seperti permintaan aslinya.
+
 ## Soal 14
 
 Vingilot
@@ -506,6 +659,79 @@ Vingilot
 
 Elrond
 <img width="1669" height="151" alt="image" src="https://github.com/user-attachments/assets/07239a9c-515e-417e-a761-50b5ae147f2e" />
+
+### 1. Membuka File Konfigurasi
+```bash
+nano /etc/nginx/sites-available/app.conf
+```
+Perintah ini membuka file konfigurasi Nginx bernama `app.conf` di editor **nano**.  
+File ini biasanya berisi pengaturan server block untuk aplikasi `/app`.
+
+---
+
+### 2. Menambahkan Baris Log Akses
+Tambahkan baris berikut di dalam blok `server { ... }`:
+```nginx
+access_log /var/log/nginx/access.log main;
+```
+#### Penjelasan:
+- `access_log` → Menentukan lokasi file log untuk menyimpan semua request yang diterima oleh Nginx.
+- `/var/log/nginx/access.log` → Lokasi file log utama di sistem.
+- `main` → Format log bawaan (default log format) yang sudah didefinisikan di file konfigurasi utama `/etc/nginx/nginx.conf`.
+
+Dengan konfigurasi ini, setiap request HTTP ke server akan dicatat di file `/var/log/nginx/access.log`.
+
+---
+
+### 3. Mengecek dan Menjalankan Nginx
+```bash
+nginx -t
+sever nginx stop
+server nginx start
+```
+#### Penjelasan:
+- `nginx -t` → Mengecek apakah file konfigurasi valid.
+- `service nginx stop` → Menghentikan layanan Nginx (ada typo di contoh: harusnya **service**, bukan **sever**).
+- `service nginx start` → Menyalakan kembali layanan Nginx agar konfigurasi baru diterapkan.
+
+> **Catatan:**  
+> Koreksi perintah yang benar:
+> ```bash
+> service nginx stop
+> service nginx start
+> ```
+
+---
+
+### 4. Melihat Isi Log Akses
+```bash
+tail /var/log/nginx/access.log
+```
+- `tail` menampilkan beberapa baris terakhir dari file log.
+- Gunakan ini untuk memantau apakah request dari client benar-benar tercatat di log.
+
+Contoh output:
+```
+192.168.1.10 - - [22/Oct/2025:17:42:01 +0700] "GET /app/ HTTP/1.1" 200 532 "-" "curl/7.68.0"
+```
+Artinya, client dengan IP `192.168.1.10` melakukan request ke `/app/` dengan status **200 OK**.
+
+---
+
+### 5. Pengujian dari Client
+```bash
+curl http://www.jarkomK49.com/app/
+```
+#### Penjelasan:
+- `curl` digunakan untuk mengirim request HTTP ke server.
+- Jika konfigurasi benar, akan muncul **response 200 OK** dari server, dan request tersebut akan muncul di log Nginx.
+
+---
+
+### Kesimpulan
+Konfigurasi ini menambahkan **pencatatan log akses (access log)** untuk semua request ke aplikasi `/app`.  
+Hasil log disimpan di `/var/log/nginx/access.log`, yang dapat dipantau dengan perintah `tail`.  
+Langkah ini penting untuk memonitor trafik, debugging, dan analisis aktivitas pengguna.
 
 ## Soal 15
 
